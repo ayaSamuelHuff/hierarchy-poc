@@ -1,0 +1,96 @@
+<h2>Angular Tree</h2>
+
+<p>
+  This is an example of a traditional tree view.
+</p>
+<p>
+  Expand and collapse nodes by selecting the caret. <br />
+  View an account's facilities and services by clicking the account name.
+</p>
+<!-- <p>
+  Search for facilities or services using the search box. <br/>
+  If only one account matches the input, the account will be
+  made visible and the facilities and services will be displayed.
+  <br>
+  If multiple accounts match the input, all accounts will be highlighted and the first on selected.
+</p> -->
+
+<mat-form-field>
+  <mat-label>Search</mat-label>
+  <input matInput [formControl]="searchControl">
+</mat-form-field>
+
+<div class="content">
+
+  <div class="content-wrapper accounts">
+    <h3>Accounts</h3>
+    <mat-tree [dataSource]="dataSource" [treeControl]="accountTreeControl" [trackBy]="trackByIdFn">
+
+      <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding class="clickable"
+        [class.active]="(activeAccountId$ | async) == node.data.id" (click)="selectAccount(node)">
+        <button mat-icon-button disabled></button>
+
+        <div class="account-tile">
+          {{ node.data.name }}
+          <mat-progress-bar *ngIf="node.isLoading" mode="indeterminate"
+          class="example-tree-progress-bar"></mat-progress-bar>
+
+          <mat-icon (click)="navigateAccount($event,node.data.name)" matTooltip="Open in new tab">open_in_new</mat-icon>
+        </div>
+      </mat-tree-node>
+
+      <mat-tree-node *matTreeNodeDef="let node; when:hasChild" matTreeNodePadding (click)="selectAccount(node)"
+        class="clickable" [class.active]="(activeAccountId$ | async) == node.data.id">
+        <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.data.name">
+          <mat-icon class="mat-icon-rtl-mirror">
+            {{accountTreeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
+          </mat-icon>
+        </button>
+        <div class="account-tile">
+          {{ node.data.name }}
+          <mat-progress-bar *ngIf="node.isLoading" mode="indeterminate"
+          class="example-tree-progress-bar"></mat-progress-bar>
+
+          <mat-icon (click)="navigateAccount($event, node.data.name)" matTooltip="Open in new tab">open_in_new</mat-icon>
+        </div>
+
+
+      </mat-tree-node>
+
+    </mat-tree>
+  </div>
+
+  <div class="content-wrapper">
+    <h3>Facilities</h3>
+    <mat-list role="list" *ngIf="facilities$ | async as facilities">
+      <ng-container *ngFor="let kv of facilities">
+        <span class="account-separator">
+          <span class="account-name">{{ kv.name }}</span>
+        </span>
+
+        <mat-list-item *ngFor="let facility of kv.values" class="clickable">
+          <a matListItemTitle (click)="navigateFacility(facility.name)">{{ facility.name }}</a>
+        </mat-list-item>
+
+      </ng-container>
+
+    </mat-list>
+  </div>
+
+
+  <div class="content-wrapper">
+    <h3>Services</h3>
+    <mat-list role="list">
+      <mat-list-item *ngFor="let service of services$ | async" class="clickable">
+        <a matListItemTitle (click)="navigateService(service.name)">{{ service.name }}</a>
+
+      </mat-list-item>
+    </mat-list>
+  </div>
+
+
+</div>
+
+<ng-template #openInTabFragement let-click>
+  <mat-icon (click)="click" matTooltip="Open in new tab">open_in_new</mat-icon>
+</ng-template>

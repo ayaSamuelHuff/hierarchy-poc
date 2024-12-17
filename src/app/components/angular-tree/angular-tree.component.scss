@@ -1,0 +1,56 @@
+
+.content {
+  display: flex;
+  flex-direction: row;
+  gap: 1.5em;
+}
+
+.content-wrapper {
+  flex: 1;
+
+  &.accounts {
+    flex: 2;
+  }
+}
+
+.active {
+  background-color:rgb(193, 230, 255);
+}
+
+.example-tree-progress-bar {
+  margin-left: 30px;
+  max-width: 200px;
+  width: 100%;
+}
+
+.clickable {
+  cursor:pointer !important;
+
+  &:hover {
+    background-color:rgb(225, 240, 250);
+  }
+}
+
+.account-tile {
+  width:100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+
+  padding-right: 2em;
+}
+
+.account-name {
+  display:flex;
+  align-items:center;
+  font-size: 0.75em;
+  font-weight:700;
+  color: rgb(148, 148, 148);
+
+  &::after {
+    content: '';
+    flex:auto;
+    margin-left: 1rem;
+    border-top: 2px solid rgb(155, 155, 155);
+  }
+}
