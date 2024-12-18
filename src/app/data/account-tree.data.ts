@@ -81,12 +81,12 @@ const facilities = [
 ];
 
 const services = [
-  'Locums',
-  'Travel Nurse',
-  'Permanent',
-  'Leadership',
-  'Assistant',
-  'Something Else',
+  'Service A',
+  'Service B',
+  'Service C',
+  'Service D',
+  'Service E',
+  'Service F',
 ];
 
 export const accounts: Account[] = [
