@@ -6,10 +6,9 @@ import { fakeNetwork } from '../util/fake-network';
 
 export class AccountTreeService {
   searchAccounts(searchTerm: string): Observable<Account[]> {
-    var a: (Account &
-      {
-        hasChildren?: boolean;
-      })[] = [];
+    var a: (Account & {
+      hasChildren?: boolean;
+    })[] = [];
 
     for (const account of accounts) {
       if (
@@ -33,8 +32,8 @@ export class AccountTreeService {
       a.map((x) => ({
         id: x.id,
         name: x.name,
-        children: x.children ?? [],
-        hasChildren: x.children.length > 0 || x.hasChildren
+        children: x.children,
+        hasChildren: x.hasChildren ||  (!!x.children && x.children.length > 0),
       }))
     );
   }
@@ -48,7 +47,7 @@ export class AccountTreeService {
           id: x.id,
           name: x.name,
           children: [],
-          hasChildren: x.children.length > 0,
+          hasChildren: x.children == null ? false : x.children.length > 0,
         };
       })
     );

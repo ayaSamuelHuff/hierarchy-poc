@@ -26,36 +26,46 @@
     <h3>Accounts</h3>
     <mat-tree [dataSource]="dataSource" [treeControl]="accountTreeControl" [trackBy]="trackByIdFn">
 
-      <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding class="clickable"
-        [class.active]="(activeAccountId$ | async) == node.data.id" (click)="selectAccount(node)">
+      <mat-tree-node role="treeitem" *matTreeNodeDef="let node" class="clickable"
+        [class.active]="(activeAccountId$ | async) == node.account.id" (click)="selectAccount(node)">
         <button mat-icon-button disabled></button>
 
         <div class="account-tile">
-          {{ node.data.name }}
+          {{ node.account.name }}
           <mat-progress-bar *ngIf="node.isLoading" mode="indeterminate"
-          class="example-tree-progress-bar"></mat-progress-bar>
+            class="example-tree-progress-bar"></mat-progress-bar>
 
-          <mat-icon (click)="navigateAccount($event,node.data.name)" matTooltip="Open in new tab">open_in_new</mat-icon>
+          <mat-icon (click)="navigateAccount($event,node.account.name)"
+            matTooltip="Open in new tab">open_in_new</mat-icon>
         </div>
       </mat-tree-node>
 
-      <mat-tree-node *matTreeNodeDef="let node; when:hasChild" matTreeNodePadding (click)="selectAccount(node)"
-        class="clickable" [class.active]="(activeAccountId$ | async) == node.data.id">
-        <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.data.name">
-          <mat-icon class="mat-icon-rtl-mirror">
-            {{accountTreeControl.isExpanded(node) ? 'expand_more' : 'chevron_right'}}
-          </mat-icon>
-        </button>
-        <div class="account-tile">
-          {{ node.data.name }}
-          <mat-progress-bar *ngIf="node.isLoading" mode="indeterminate"
-          class="example-tree-progress-bar"></mat-progress-bar>
+      <mat-nested-tree-node role="group" #treeNode="matNestedTreeNode" *matTreeNodeDef="let node; when:hasChild">
+        <div class="mat-tree-node clickable" [class.active]="(activeAccountId$ | async) == node.account.id"
+          (click)="selectAccount(node)">
 
-          <mat-icon (click)="navigateAccount($event, node.data.name)" matTooltip="Open in new tab">open_in_new</mat-icon>
+          <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'Toggle ' + node.account.name">
+            <mat-icon>
+              {{treeNode.isExpanded ? 'expand_more' : 'chevron_right'}}
+            </mat-icon>
+          </button>
+          <div class="account-tile">
+            {{ node.account.name }}
+            <mat-progress-bar *ngIf="node.isLoading" mode="indeterminate"
+              class="example-tree-progress-bar"></mat-progress-bar>
+
+            <mat-icon (click)="navigateAccount($event, node.account.name)"
+              matTooltip="Open in new tab">open_in_new</mat-icon>
+          </div>
         </div>
 
+        <ul>
+          <div *ngIf="treeNode.isExpanded">
 
-      </mat-tree-node>
+            <ng-container matTreeNodeOutlet></ng-container>
+          </div>
+        </ul>
+      </mat-nested-tree-node>
 
     </mat-tree>
   </div>

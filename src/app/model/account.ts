@@ -9,7 +9,7 @@ export type Account = Named & {
   id: number;
   facilities?: Named[];
   services?: Named[];
-  children: Account[];
+  children?: Account[];
   hasChildren: boolean;
 };
 

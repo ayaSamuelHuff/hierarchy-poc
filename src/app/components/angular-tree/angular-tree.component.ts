@@ -1,5 +1,11 @@
-import { FlatTreeControl } from '@angular/cdk/tree';
-import { Component, inject, OnInit } from '@angular/core';
+import {
+  NestedTreeControl,
+} from '@angular/cdk/tree';
+import {
+  Component,
+  inject,
+  OnInit,
+} from '@angular/core';
 import { MatTreeModule } from '@angular/material/tree';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,22 +15,27 @@ import {
   filter,
   forkJoin,
   map,
+  Observable,
   of,
   share,
   Subject,
   switchMap,
+  tap,
 } from 'rxjs';
-import { AsyncPipe, NgFor, NgIf, NgTemplateOutlet } from '@angular/common';
+import { AsyncPipe, NgFor, NgIf } from '@angular/common';
 import { MatListModule } from '@angular/material/list';
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { AccountTreeService } from '../../data/account.service';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { AccountFlatNode, Nullable } from './interfaces';
-import { AccountsDataSource, flatten } from './accounts-data-source';
+import { Nullable } from './interfaces';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { TreeNode } from './tree-node';
+import {
+  LazyDataSource,
+} from './lazy-nested-tree-node.component';
 
 @Component({
   selector: 'app-angular-tree',
@@ -44,7 +55,6 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     NgIf,
     MatSnackBarModule,
     MatTooltipModule,
-    NgTemplateOutlet,
   ],
   templateUrl: './angular-tree.component.html',
   styleUrl: './angular-tree.component.scss',
@@ -53,22 +63,14 @@ export class AngularTreeComponent implements OnInit {
   private readonly accountService = new AccountTreeService();
   private readonly snackbar = inject(MatSnackBar);
 
-  facilityDataSource$ = new Subject<any>();
-
   searchControl = new FormControl<string>('');
 
-  accountTreeControl: FlatTreeControl<AccountFlatNode>;
-  dataSource: AccountsDataSource;
+  accountTreeControl: NestedTreeControl<TreeNode>;
+  dataSource: LazyDataSource;
 
   constructor() {
-    this.accountTreeControl = new FlatTreeControl<AccountFlatNode>(
-      this.getLevel,
-      this.isExpandable
-    );
-    this.dataSource = new AccountsDataSource(
-      this.accountTreeControl,
-      this.accountService
-    );
+    this.accountTreeControl = new NestedTreeControl<TreeNode>((n) => n.children$.asObservable());
+    this.dataSource = new LazyDataSource(this.accountTreeControl, this.loadChildren);
   }
 
   selectedAccountId$ = new Subject<Nullable<number>>();
@@ -91,15 +93,20 @@ export class AngularTreeComponent implements OnInit {
     share()
   );
 
-  loadFacilities$ = new Subject<number>();
-
   facilities$ = this.selectedAccountData$.pipe(map(([f, _]) => f));
 
   services$ = this.selectedAccountData$.pipe(map(([_, s]) => s));
 
-  hasChild = (_: number, node: AccountFlatNode) => node.expandable;
-  getLevel = (node: AccountFlatNode) => node.level;
-  isExpandable = (node: AccountFlatNode) => node.expandable;
+  hasChild = (_: number, node: TreeNode) => node.hasChildren;
+
+  loadChildren = (n: TreeNode): Observable<TreeNode[]> => {
+    n.isLoading = true;
+
+    return this.accountService.getChildAccounts(n.account.id).pipe(
+      map((x) => x.flatMap((x) => new TreeNode(x))),
+      tap(() => (n.isLoading = false))
+    );
+  };
 
   ngOnInit(): void {
     this.searchControl.valueChanges
@@ -115,12 +122,32 @@ export class AngularTreeComponent implements OnInit {
         })
       )
       .subscribe((a) => {
-        this.dataSource.data = a.flatMap((x) => flatten(x));
+        this.dataSource.data = a.flatMap((x) => new TreeNode(x));
+
+        for (const n of this.getExpandedNodes(this.dataSource.data)) {
+          this.accountTreeControl.expand(n);
+        }
       });
   }
 
-  selectAccount(node: AccountFlatNode) {
-    this.selectedAccountId$.next(node.data.id);
+  getExpandedNodes(nodes: TreeNode[]): TreeNode[] {
+    const v: TreeNode[] = [];
+
+    for (const node of nodes) {
+      if (!node.account.children?.length) {
+        continue;
+      }
+
+      v.push(node);
+
+      v.push(...this.getExpandedNodes(node.children));
+    }
+
+    return v;
+  }
+
+  selectAccount(node: TreeNode) {
+    this.selectedAccountId$.next(node.account.id);
   }
 
   showNavigate(name: string) {
@@ -144,7 +171,7 @@ export class AngularTreeComponent implements OnInit {
     this.showNavigate(`account "${name}"`);
   }
 
-  trackByIdFn(index: number, node: AccountFlatNode) {
-    return node.data.id;
+  trackByIdFn(index: number, node: TreeNode) {
+    return node.account.id;
   }
 }
